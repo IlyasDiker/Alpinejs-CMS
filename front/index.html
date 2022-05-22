@@ -1,0 +1,142 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test Crud user</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/normalize/8.0.1/normalize.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/milligram/1.4.1/milligram.css">
+    <script src="//unpkg.com/alpinejs" defer></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/axios/0.27.2/axios.min.js" integrity="sha512-odNmoc1XJy5x1TMVMdC7EMs3IVdItLPlCeL5vSUPN2llYKMJ2eByTTAIiiuqLg+GdNr9hF6z81p27DArRFKT7A==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+</head>
+<body x-data="{
+    modelname: 'users',
+    API: 'http://localhost:3000/',
+    async getSchema(){
+        let res = await axios.get(`${this.API}schema/${this.modelname}`);
+        console.log(res.data.data);
+        let fieldsdata = res.data.data.fields;
+        fieldsdata.forEach(item => {
+            this.formDataCreate[item.id] = '';
+        })
+        this.fields = fieldsdata;
+        this.list = res.data.data.list;
+    },
+    async getData(){
+        let res = await axios.get(`${this.API}${this.modelname}`);
+        this.dataList = res.data.data;
+        console.log(this.dataList);
+    },
+    fields: null,
+    list: null,
+    formDataCreate : {},
+    formDataEdit: {},
+    dataList: null,
+    editRow(data, ind){
+        if(this.selectedInstance != ind) {
+            this.selectedInstance = ind;
+            this.fields.forEach(el=>{
+                this.formDataEdit[el.id] = data[el.id];
+            })
+        }else{
+            this.selectedInstance = null;
+            this.formDataEdit = {}
+        }
+    },
+
+    async addModel(e){
+        e.preventDefault();
+        let res = await axios.post(`${this.API}${this.modelname}`, {
+            ...this.formDataCreate
+        });
+        console.log(res);
+    },
+    async editModel(e, target){
+        e.preventDefault();
+        let res = await axios.put(`${this.API}${this.modelname}/${target}`, {
+            ...this.formDataEdit
+        });
+        console.log(res);
+    },
+    async deleteModel(e, target){
+        e.preventDefault();
+        let res = await axios.delete(`${this.API}${this.modelname}/${target}`);
+        console.log(res);
+    },
+    selectedInstance: null,
+}" x-init="getSchema">
+    
+<div class="container">
+    <blockquote>
+        <legend>Add</legend>
+        <form x-show="fields ? fields.length > 0 : false" @submit.prevent.stop="addModel($event)">
+            <template x-for="(item, index) in fields" :key="index">
+                <div style="margin-bottom: 10px;">
+                    <label>
+                        <div x-text="item.name"></div>
+                        <input :type="item.type" :placeholder="item.placeholder" :name="item.id" x-model="formDataCreate[item.id]" x-bind:required="item.required ? true : false">
+                    </label>
+                </div>
+            </template>
+            <div>
+                <button role="submit">Submit</button>
+            </div>
+        </form>
+        <div x-show="!fields">
+            Loading ...
+        </div>
+    </blockquote>
+
+    <blockquote x-init="getData">
+        <legend>List</legend>
+        <div class="container">
+            <div class="row">
+                <template x-for="item in list">
+                    <div class="column" x-html="item.label"></div>
+                </template>
+                <div class="column">Action</div>
+            </div>
+            <template x-for="(datarow, ind) in dataList">
+                <div>
+                    <div class="row">
+                        <template x-for="indic in list">
+                            <div class="column" x-text="datarow[indic.id]" ></div>
+                        </template>
+                        <div class="column">
+                            <button @click="editRow(dataList[ind], ind)">Edit</button>
+                            <button @click="deleteModel($event, datarow.id)">Delete</button>
+                        </div>
+                    </div>
+                    <div class="row" x-show="selectedInstance == ind" x-transition>
+                        <div class="column column-100">
+                            <blockquote>
+                                <legend>Edit</legend>
+                                <form x-show="fields ? fields.length > 0 : false" @submit.prevent.stop="editModel($event, datarow.id)">
+                                    <template x-for="(fieldrow, index) in fields" :key="index">
+                                        <div style="margin-bottom: 10px;">
+                                            <label>
+                                                <div x-text="fieldrow.name"></div>
+                                                <input :type="fieldrow.type" :placeholder="fieldrow.placeholder" :name="fieldrow.id" x-model="formDataEdit[fieldrow.id]" x-bind:required="fieldrow.required ? true : false">
+                                            </label>
+                                        </div>
+                                    </template>
+                                    <div>
+                                        <button role="submit">Submit</button>
+                                    </div>
+                                </form>
+                                <div x-show="!fields">
+                                    Loading ...
+                                </div>
+                            </blockquote>
+                        </div>
+                    </div>
+                </div>
+            </template>
+        </div>
+    </blockquote>
+
+</div>
+    
+</body>
+</html>
